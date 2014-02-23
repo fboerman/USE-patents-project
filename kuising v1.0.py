@@ -33,7 +33,8 @@ while i < len(data_net):
             if len(line.split(" ")[0]) > 2 and "AT-E" not in line:
                 i = j - 1
                 break
-            companies[company].append(line)
+            patent = line.split("-")[0].replace(' ', '').replace(',', '')
+            companies[company].append(patent)
             j += 1
 
     i += 1
