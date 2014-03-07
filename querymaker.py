@@ -13,12 +13,13 @@ parser.add_argument('--username', nargs='?', const=1, type=str, default='', help
 parser.add_argument('--password', nargs='?', const=1, type=str, default='', help='password for janus proxy service')
 parser.add_argument('--driver', nargs='?', const=1, type=str, default='firefox', help='browser drive: chrome/firefox. default firefox')
 parser.add_argument('--downloadtype', nargs='?', const=1, type=str, default='patents', help='datatype of download: patents/citations')
+parser.add_argument('--jsonfile', nargs='?', const=1, type=str, default='data_valid.json', help='specifies the json file with the patents')
 
-JANUS, USERNAME, PASSWORD, DRIVER, DOWNLOADTYPE  = parser.parse_args().janus, parser.parse_args().username, parser.parse_args().password, \
-                                                   parser.parse_args().driver, parser.parse_args().downloadtype
+JANUS, USERNAME, PASSWORD, DRIVER, DOWNLOADTYPE, JSON  = parser.parse_args().janus, parser.parse_args().username, parser.parse_args().password, \
+                                                   parser.parse_args().driver, parser.parse_args().downloadtype, parser.parse_args().jsonfile
 if DOWNLOADTYPE == 'patents':
     #get the data info
-    inputdata = json.loads(open("data.json", 'r').readlines()[0])
+    inputdata = json.loads(open(JSON, 'r').readlines()[0])
 elif DOWNLOADTYPE == 'citations':
     sheet = openpyxl.load_workbook('patentdata.xlsx').get_active_sheet()
     inputdata = []

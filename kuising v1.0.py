@@ -1,14 +1,16 @@
 __author__ = 'williewonka'
 
-import json
+from json import dumps
 
 file = open("data raw.txt", "r").readlines()
 outputfile = open("data.txt", "w")
-outputjson = open("data.json", "w")
+outputjson_valid = open("data_valid.json", "w")
+outputjson_expired = open("data_expired.json", "w")
 
 data_net = []
 
-companies = {}
+valid = {}
+expired = {}
 
 #throw all page references out
 for line in file:
@@ -27,19 +29,25 @@ while i < len(data_net):
     if len(line.split(" ")[0]) > 2 and "AT-E" not in line:
         j = i + 1
         company = line
-        companies[company] = []
+        valid[company] = []
+        expired[company] = []
         while j < len(data_net):
             line = data_net[j].strip('\n')
             if len(line.split(" ")[0]) > 2 and "AT-E" not in line:
                 i = j - 1
                 break
             patent = line.split("-")[0].replace(' ', '').replace(',', '')
-            companies[company].append(patent)
+            if 'Expired' in line:
+                expired[company].append(patent)
+            else:
+                valid[company].append(patent)
             j += 1
 
     i += 1
 
 #create json object and write to file
-JSON = json.dumps(companies)
+JSON_v = dumps(valid)
+JSON_e = dumps(expired)
 outputfile.writelines(data_net)
-outputjson.writelines(JSON)
+outputjson_valid.writelines(JSON_v)
+outputjson_expired.writelines(JSON_e)

@@ -4,17 +4,16 @@ import openpyxl
 
 class TextMining:
 
-    def __init__(self, mainFileName, ExportName, rawinput):
+    def __init__(self, mainFileName):#, rawinput):
         self.mainFileName = mainFileName
-        self.ExportName = ExportName
-        self.rawinput = rawinput
+        # self.rawinput = rawinput
         self.droplist = ["", "the", "a", "an", "on", "can", "is", "not", "and", "are", "to", "in", "for", "as", "of", "it", "if", "in", "e.g", "i.e",
                          "or", "at","by", "be", "so", "with", "thus", "with", "use", "from", "such", "has", "into", "over", "via", "which", "but",
                          "that"]
         self.wb = openpyxl.load_workbook(self.mainFileName)
         self.sheet = self.wb.get_active_sheet()
         
-    def Parse_Company_Counting(self):
+    def Parse_Company_Counting(self,ExportName):
         companies = {}
         data = (self.sheet.columns[0], self.sheet.columns[3])
         for i in range(0, len(data[0])):
@@ -51,65 +50,42 @@ class TextMining:
             sheet.cell(row=(i+1),column=0).value = list(companies.keys())[i]
             for country in list(list(companies.values())[i].keys()):
                 sheet.cell(row=(i+1),column=(columns.index(country) + 1)).value = list(companies.values())[i][country]
-        exportwb.save(self.ExportName)
+        exportwb.save(ExportName)
 
-    def Parse_Word_Counting(self):
+    def Parse_Word_Counting(self, ExportName):
         data = self.sheet.columns[1]
-        categories = {}
+        words = {}
         for row in data:
-            #splitten naar de aparte categoriën
-            #verwijder de eerste lege entry
-            try:
-                parts = row.value.split("   ")
-            except:
-                continue
-            parts.pop(0)
-            for part in parts:
-                #extract de naam van categorie
-                categorie = part.split(" - ")[0].strip()
-                if len(part.split(" - ")) < 2:
+            #iterate through the words
+            for word in row.split(' '):
+                #check if word is in droplist or is an integer, in that case skip the word
+                if word in self.droplist or '(' in word or ')' in word:
                     continue
-                text = part.split(" - ")[1].strip()
-                #kijk of categorie al bestaat, indien niet creeër
                 try:
-                    categorielist = categories[categorie]
+                    float(word)
+                    continue
                 except:
-                    categories[categorie] = {}
-                    categorielist = {}
-                #splits op spaties voor alle woorden
-                for woord in text.split(" "):
-                    #kijk of woord al in lijst staat
-                    woord = woord.lower().strip(".").strip(",").strip(";")
-                    #kijk of het een getal is
-                    try:
-                        float(woord)
-                        continue
-                    except:
-                        pass
-                    if woord not in self.droplist and "(" not in woord and ")" not in woord: #controleer tegen de filteropties
-                        try:
-                            categorielist[woord] += 1
-                        except:
-                            categorielist[woord] = 1
-                    else:
-                        continue
-                categories[categorie] = categorielist
+                    pass
+                #if word has passed checks, see if it is already in dictionary, if so add 1 if not create entry
+                try:
+                    words[word] += 1
+                except:
+                    words[word] = 1
 
-            print("row: " + row.address.split("F")[1])
-
-        #exporteer de data
+        #export data
+        #create workbook
         exportwb = openpyxl.Workbook()
-        for categorie in list(categories.keys()):
-            exportwb.create_sheet(title=categorie)
-            sheet = exportwb.get_sheet_by_name(categorie)
-            for i in range(0,len(categories[categorie])):
-                sheet.cell(row=i, column=0).value = list(categories[categorie].keys())[i]
-                sheet.cell(row=i, column=1).value = list(categories[categorie].values())[i]
-                
-        #verwijder de standaard aangemaakte sheet:
-        sheet = exportwb.get_sheet_by_name("Sheet")
-        exportwb.remove_sheet(sheet)
-        exportwb.save(self.ExportName)
+        sheet = exportwb.get_active_sheet()
+        #iterate through the results and write to workbook
+        wordlist = list(words.keys())
+        countlist = list(words.items())
+        for i in range(0,len(wordlist)):
+            word = wordlist[i]
+            count = int(countlist[i])
+            sheet.cell(column=0,row=i).value = wordlist[i]
+            sheet.cell(column=1,row=i).value = int(countlist[i])
+
+        exportwb.save(ExportName)
 
     def Parse_Categories(self, ExportName):
         data = self.sheet.columns[5]
