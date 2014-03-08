@@ -1,5 +1,6 @@
 __author__ = 'williewonka'
 import openpyxl
+from graphviz import Graph
 
 #compile big list of all found patent numbers
 wb = openpyxl.load_workbook('patentdata_run1.xlsx')
@@ -14,6 +15,7 @@ for cell in patentnumbers:
 
 data = (sheet.columns[0],sheet.columns[6])
 
+G = Graph('Test','test2.gz','circle')
 for i in range(0,len(data[0])):
     citationlist = data[1][i].value
     if citationlist is None:
@@ -24,3 +26,9 @@ for i in range(0,len(data[0])):
         for citation in citationentry.split(' -- '):
             if citation.split('-')[0] in list(patentlisttotal.keys()):
                 print('row ' + str(i) + ' cites row ' + str(patentlisttotal[citation.split('-')[0]]))
+                G.AddNode(str(i), str(patentlisttotal[citation.split('-')[0]]))
+# G.CreateEdgeList('citations')
+G.SPLC()
+G.Parse([5,20,30,34])
+# EndPoints = G.FindEndPoints()
+# BeginPoints = G.FindBeginPoints()
