@@ -24,12 +24,14 @@ class Graph():
     def AddNodeDirect(self, parent, child, color, label):
         self.stream.write('\t' + parent + ' -> ' + child +  ' [label = ' + label + ', color = ' + color + '];\n')
 
-    def Parse(self,categories=[5,10,20,50]):
+    def Parse(self,categories=[5,10,20,50],filter=0):
         self.StartFile()
         for node in list(self.Edges.keys()):
             parent = node.split('.')[0]
             child = node.split('.')[1]
             count = self.Edges[node]
+            if count <= filter:
+                continue
             if count < categories[0]:
                 color = 'black'
                 penwidth = 1
@@ -57,7 +59,7 @@ class Graph():
                 if Type == 'citations':
                     self.Edges[parent + '.' + child] = self.nodes[parent][child]
                 elif Type == 'SPLC':
-                    self.Edges[parent + '.' + child] = 1
+                    self.Edges[parent + '.' + child] = 0
         return self.Edges
 
     def Close(self):
@@ -98,26 +100,22 @@ class Graph():
         return EndPoints
 
     def WalkNext(self, parent, child, alreadydone):
-        print(parent + '.' + child)
+        # print(parent + '.' + child)
         self.debug.write(parent + '.' + child + "\n")
-        self.Edges[parent + '.' + child] += 1
+        alreadydone.append(parent + '.' + child)
         if int(child) in self.FindEndPoints():
+            for edge in alreadydone:
+                self.Edges[edge] += 1
             return
         for c in list(self.nodes[child].keys()):
-            # if int(c) in self.FindEndPoints():
-            #     self.Edges[child + '.' + c] += 1
-            if c in alreadydone:
+            if child + '.' + c in alreadydone:
                 continue
-            if c not in self.FindEndPoints():
-                alreadydone.append(c)
-                self.WalkNext(child,c,alreadydone)
-            else:
-                self.WalkNext(child,c,alreadydone)
+            self.WalkNext(child,c,alreadydone)
 
     def SPLC(self):
         self.debug = open('debug.txt','w')
         self.CreateEdgeList('SPLC')
         for beginpoint in self.FindBeginPoints():
             for child in list(self.nodes[str(beginpoint)].keys()):
-                self.WalkNext(str(beginpoint),child,[str(beginpoint),child])
+                self.WalkNext(str(beginpoint), str(child),[])
         self.debug.close()
