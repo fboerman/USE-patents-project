@@ -1,10 +1,13 @@
 __author__ = 'williewonka'
 
+from json import dumps
+
 class Graph():
     def __init__(self, graphname, filename, shape):
         self.filename = filename
         self.shape = shape
         self.nodes = {}
+        self.iterations = 0
 
     def StartFile(self):
         self.stream = open(self.filename, 'w')
@@ -21,10 +24,12 @@ class Graph():
                 child : 1
             }
 
-    def AddNodeDirect(self, parent, child, color, label):
+    def AddNodeDirect(self, parent, child, color, label, noselfie=True):
+        if parent == child and noselfie:
+            return
         self.stream.write('\t' + parent + ' -> ' + child +  ' [label = ' + label + ', color = ' + color + '];\n')
 
-    def Parse(self,categories=[5,10,20,50],filter=0):
+    def Parse(self,categories=[5,10,20,50],filter=-1):
         self.StartFile()
         for node in list(self.Edges.keys()):
             parent = node.split('.')[0]
@@ -99,23 +104,46 @@ class Graph():
         EndPoints.sort()
         return EndPoints
 
-    def WalkNext(self, parent, child, alreadydone):
+    def WalkNext(self, parent, child, visitededges, visitednodes):
+        #DEBUG
+        if self.iterations > 10000:
+            self.DebugDump('infinite loop SPLC',[visitednodes,visitededges])
+        self.iterations += 1
         # print(parent + '.' + child)
         self.debug.write(parent + '.' + child + "\n")
-        alreadydone.append(parent + '.' + child)
+
+        #FUNCTION
+        visitededges.append(parent + '.' + child)
+        visitednodes.append(child)
         if int(child) in self.FindEndPoints():
-            for edge in alreadydone:
+            for edge in visitededges:
                 self.Edges[edge] += 1
+            visitededges.pop()
+            visitednodes.pop()
             return
         for c in list(self.nodes[child].keys()):
-            if child + '.' + c in alreadydone:
+            if child + '.' + c in visitededges or c in visitednodes:
                 continue
-            self.WalkNext(child,c,alreadydone)
+            self.WalkNext(child,c,visitededges,visitednodes)
+        visitededges.pop()
+        visitednodes.pop()
 
     def SPLC(self):
         self.debug = open('debug.txt','w')
         self.CreateEdgeList('SPLC')
+        self.iterations = 0
         for beginpoint in self.FindBeginPoints():
             for child in list(self.nodes[str(beginpoint)].keys()):
-                self.WalkNext(str(beginpoint), str(child),[])
+                self.WalkNext(str(beginpoint), str(child),[],[beginpoint])
         self.debug.close()
+
+    def DebugDump(self,error,dumplist):
+        self.debug.close()
+        stream = open('debug.json','w')
+        stream.writelines(dumps(self.Edges)+'\n'+dumps(self.nodes)+'\n')
+        for dump in dumplist:
+            stream.writelines(dumps(dump)+'\n')
+        stream.close()
+        self.debug.close()
+        self.Parse()
+        raise Exception(error)

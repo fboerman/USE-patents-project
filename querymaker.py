@@ -46,14 +46,15 @@ if JANUS:
     browser.fill('pass', PASSWORD)
     #find and click the login button
     browser.find_by_value('Login').first.click()
-    #if new session needs to be started click link
-    try:
-        browser.find_link_by_partial_text('new session').first.click()
-    except:
-        pass
 else:
     url = 'http://apps.webofknowledge.com/DIIDW_AdvancedSearch_input.do?SID=N1cpglrQOdCmC16gM44&product=DIIDW&search_mode=AdvancedSearch'
     browser.visit(url)
+
+#if new session needs to be started click link
+try:
+    browser.find_link_by_partial_text('new session').first.click()
+except:
+    pass
 
 def Build_Query_Citations(codes):
     #iterate through the list
