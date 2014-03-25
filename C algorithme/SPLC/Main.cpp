@@ -3,6 +3,7 @@
 //By Frank Boerman Tue 2014(c)
 //Main sourcefile
 
+//the libraries
 #include <string>
 #include <iostream>
 #include <fstream>
@@ -14,11 +15,12 @@
 #include <sstream>
 #include <cstdio>
 #include <stdio.h>
+#include <ctime>
 
 
 using namespace rapidjson;
 
-void ReadJson(Document* d, std::string fname)
+void ReadJson(Document* d, std::string fname) //read the given json file and parse it to an json Document object
 {
 	std::ifstream file;
 	std::string line;
@@ -35,7 +37,7 @@ void ReadJson(Document* d, std::string fname)
 	file.close();
 }
 
-List<int>* makeList(Document* d)
+List<int>* makeList(Document* d) //copy an json array object to a integer list
 {
 	List<int>* lijstje = new List<int>();
 	const Value& jsonlijst = *d;
@@ -46,61 +48,71 @@ List<int>* makeList(Document* d)
 	return lijstje;
 }
 
-void WalkNext(int parent, int child, List<std::string> visitededges, List<int> visitednodes, int* iterations)
+void WalkNext(int parent, int child, List<std::string> visitededges, List<int> visitednodes, int* iterations) //recursive routine that visits all nodes
 {
-	(*iterations)++;
+	(*iterations)++; //update counter
 	std::stringstream edge;
-	edge << parent << "." << child;
-	visitededges.append(edge.str());
+	edge << parent << "." << child; //create edgename
+	visitededges.append(edge.str()); //update visited node and edge
 	visitednodes.append(child);
-	if (EndPoints->Search(child))
+	if (EndPoints->Search(child)) //check if endpoint is reached
 	{
-		for (int i = 0; i < visitededges.len(); i++)
+		for (int i = 0; i < visitededges.len(); i++) //if so, loop over all visited edges
 		{
-			Edges[visitededges.Get_String(i).c_str()].SetInt(Edges[visitededges.Get_String(i).c_str()].GetInt() + 1);
+			Edges[visitededges.Get_String(i).c_str()].SetInt(Edges[visitededges.Get_String(i).c_str()].GetInt() + 1); //and count +1 to the value of that edge
 		}
-		return;
+		return; //endpoint reached so go one up
 	}
-	else
+	else//if not
 	{
-		const Value& nodes_child = Nodes[std::to_string(child).c_str()];
-		for (SizeType i = 0; i < nodes_child.Size(); i++)
+		const Value& nodes_child = Nodes[std::to_string(child).c_str()]; //convert children of child(aka current node were sitting on) to a handy list
+		for (SizeType i = 0; i < nodes_child.Size(); i++) //loop through said list
 		{
-			int c = nodes_child[i].GetInt();
+			int c = nodes_child[i].GetInt(); //fetch selected node
 			edge.str(" ");
 			edge.clear();
-			edge << child << "." << c;
-			if (visitededges.Search(edge.str()) || visitednodes.Search(c))
+			edge << child << "." << c; //create edgename (after clearing stringstream buffer)
+			if (visitededges.Search(edge.str()) || visitednodes.Search(c)) 
 			{
+				//if this node or edge is already visited in the past, skip it (loop detection, otherwise we get stuck in an infinite loop)
 				continue;
 			}
 			else
 			{
-				WalkNext(child, c, *visitededges.clone(), *visitednodes.clone(),iterations);
+				WalkNext(child, c, *visitededges.clone(), *visitednodes.clone(),iterations); //if not that visit the selected node
 			}
 		}
 	}
 }
 
-void SPLC()
+void SPLC() //the main SPLC algorithm
 {
-	int iterationstotal = 0;
-	for (int i = 0; i < BeginPoints->len(); i++)
+	int iterationstotal = 0; //counter for total interations
+	for (int i = 0; i < BeginPoints->len(); i++) //loops over the beginpoints list
 	{
-		int BP = BeginPoints->Get_Int(i);
-		const Value& BP_nodes = Nodes[std::to_string(BP).c_str()];
-		for (SizeType j = 0; j < BP_nodes.Size(); j++)
+		int BP = BeginPoints->Get_Int(i);//fetches the selected point
+		const Value& BP_nodes = Nodes[std::to_string(BP).c_str()]; //converts the json entry of this point to a handy list
+		for (SizeType j = 0; j < BP_nodes.Size(); j++)//loops over the json entry of the selected beginpoint, aka loops over the children
 		{
-			int iterations = 0;
-			int child = BP_nodes[j].GetInt();
-			std::cout << "Begin with edge " << BP << "." << child << std::endl;
-			List<std::string>* visitededges = new List<std::string>();
-			List<int>* visitednodes = new List<int>();
-			WalkNext(BP, child, *visitededges, *visitednodes, &iterations);
-			std::cout << "Finished in " << iterations << " iterations" << std::endl;
+			int iterations = 0; //counter for iterations for this child of beginpoint
+			int child = BP_nodes[j].GetInt(); //fetches the selected child
+			std::cout << "Begin with edge " << BP << "." << child << " at " << GetTime() <<std::endl; //notification with time and subject
+			List<std::string>* visitededges = new List<std::string>(); //create an empty list of strings for the edges
+			List<int>* visitednodes = new List<int>(); //create an empty list of integers for the nodes
+			WalkNext(BP, child, *visitededges, *visitednodes, &iterations); //start the recursive routine that walks over the points
+			std::cout << "Finished in " << iterations << " iterations at" << GetTime() << std::endl;//notification with time, subject and number of iterations
 			iterationstotal += iterations;
 		}
 	}
+}
+
+std::string GetTime()
+{
+	std::stringstream stream;
+	time_t tijd = time(0);
+	struct tm * now = localtime(&tijd);
+	stream << now->tm_hour << ":" << now->tm_min << ":" << now->tm_sec;
+	return stream.str();
 }
 
 int main(int argc, char* argv[])
@@ -124,7 +136,7 @@ int main(int argc, char* argv[])
 	Edges.Accept(writer);
 	//flush stream to disk
 	fclose(stream);
-
+	std::cin.ignore();
 	return 0;
 	
 }

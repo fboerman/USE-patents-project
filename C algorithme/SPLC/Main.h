@@ -28,5 +28,6 @@ void WalkNext(int parent, int child, List<std::string> visitededges, List<int> v
 void SPLC();
 //creates an integer list from json
 List<int>* makeList(rapidjson::Document* d);
-
+//returns current time
+std::string GetTime();
 #endif
