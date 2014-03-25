@@ -6,10 +6,15 @@
 #include <string>
 #include <iostream>
 #include <fstream>
-#include "rapidjson\document.h"
+#include "rapidjson/document.h"
+#include "rapidjson/filestream.h"
+#include "rapidjson/prettywriter.h"
 #include "Main.h"
 #include "List.h"
 #include <sstream>
+#include <cstdio>
+#include <stdio.h>
+
 
 using namespace rapidjson;
 
@@ -30,7 +35,7 @@ void ReadJson(Document* d, std::string fname)
 	file.close();
 }
 
-List<int> makeList(Document* d)
+List<int>* makeList(Document* d)
 {
 	List<int>* lijstje = new List<int>();
 	const Value& jsonlijst = *d;
@@ -38,7 +43,7 @@ List<int> makeList(Document* d)
 	{
 		lijstje->append(jsonlijst[i].GetInt());
 	}
-	return *lijstje;
+	return lijstje;
 }
 
 void WalkNext(int parent, int child, List<std::string> visitededges, List<int> visitednodes, int* iterations)
@@ -48,7 +53,7 @@ void WalkNext(int parent, int child, List<std::string> visitededges, List<int> v
 	edge << parent << "." << child;
 	visitededges.append(edge.str());
 	visitednodes.append(child);
-	if (EndPoints.Search(child))
+	if (EndPoints->Search(child))
 	{
 		for (int i = 0; i < visitededges.len(); i++)
 		{
@@ -61,17 +66,17 @@ void WalkNext(int parent, int child, List<std::string> visitededges, List<int> v
 		const Value& nodes_child = Nodes[std::to_string(child).c_str()];
 		for (SizeType i = 0; i < nodes_child.Size(); i++)
 		{
-			std::string c = nodes_child[i].GetString();
+			int c = nodes_child[i].GetInt();
 			edge.str(" ");
 			edge.clear();
 			edge << child << "." << c;
-			if (visitededges.Search(edge.str()) || visitednodes.Search(atoi(c.c_str())))
+			if (visitededges.Search(edge.str()) || visitednodes.Search(c))
 			{
 				continue;
 			}
 			else
 			{
-				WalkNext(child, atoi(c.c_str()), visitededges, visitednodes,iterations);
+				WalkNext(child, c, *visitededges.clone(), *visitednodes.clone(),iterations);
 			}
 		}
 	}
@@ -79,19 +84,21 @@ void WalkNext(int parent, int child, List<std::string> visitededges, List<int> v
 
 void SPLC()
 {
-	for (int i = 0; i < BeginPoints.len(); i++)
+	int iterationstotal = 0;
+	for (int i = 0; i < BeginPoints->len(); i++)
 	{
-		int BP = BeginPoints.Get_Int(i);
+		int BP = BeginPoints->Get_Int(i);
 		const Value& BP_nodes = Nodes[std::to_string(BP).c_str()];
-		for (int j = 0; j < BP_nodes.Size(); j++)
+		for (SizeType j = 0; j < BP_nodes.Size(); j++)
 		{
 			int iterations = 0;
-			int child = BP_nodes[i].GetInt();
+			int child = BP_nodes[j].GetInt();
 			std::cout << "Begin with edge " << BP << "." << child << std::endl;
 			List<std::string>* visitededges = new List<std::string>();
 			List<int>* visitednodes = new List<int>();
 			WalkNext(BP, child, *visitededges, *visitednodes, &iterations);
-			std::cout << "Finished in " << iterations << std::endl;
+			std::cout << "Finished in " << iterations << " iterations" << std::endl;
+			iterationstotal += iterations;
 		}
 	}
 }
@@ -104,24 +111,20 @@ int main(int argc, char* argv[])
 	Document json;
 	ReadJson(&json, "json/beginpoints.json");
 	BeginPoints = makeList(&json);
+	ReadJson(&json, "json/endpoints.json");
+	EndPoints = makeList(&json);
+	
+	//activate the algorithm
+	SPLC();
+	//open the filestream
+	FILE* stream = fopen("json/outputedges.json","w");
+	//save the document
+	FileStream f(stream);
+	Writer<FileStream> writer(f);
+	Edges.Accept(writer);
+	//flush stream to disk
+	fclose(stream);
 
-	//int test_check = EndPoints.HasMember("9");
-	//List<std::string>* lijstje = new List<std::string>("testitem");
-	//lijstje->append("yolo");
-	//std::string test = lijstje->Get_String(1);
-
-	//List<int>* lijstje2 = new List<int>(1);
-	//lijstje2->append(5);
-	//int testint = lijstje2->Get_Int(1);
-	//lijstje2->pop();
-	//int testint2 = lijstje2->Get_Int(1);
-	//bool search = lijstje->Search("yolo");
-	//bool search2 = lijstje2->Search(1);
-	//int test = Nodes["21"]["19"].GetInt();
-	//Type test = EndPoints.GetType();
-	//const Value& list = EndPoints;
-	//SizeType i = 0;
-	//int testint = list[i].GetInt();
 	return 0;
 	
 }

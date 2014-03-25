@@ -30,6 +30,8 @@ public:
 	void pop();
 	//set an item
 	void Set(int i, T item);
+	//clones the current item
+	List<T>* clone();
 
 private:
 	T* _List; //the internal array to store the list
@@ -116,6 +118,7 @@ template<typename T> int List<T>::Get_Int(int i)
 	return _List[i];
 }
 
+
 template<typename T> bool List<T>::Search(T item)
 {
 	for (int i = 0; i < _len; i++)
@@ -126,6 +129,17 @@ template<typename T> bool List<T>::Search(T item)
 		}
 	}
 	return false;
+}
+
+template<typename T> List<T>* List<T>::clone()
+{
+	List<T>* newlist = new List<T>();
+	
+	for (int i = 0; i < _len; i++)
+	{
+		newlist->append(_List[i]);
+	}
+	return newlist;
 }
 
 #endif

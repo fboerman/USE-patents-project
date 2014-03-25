@@ -13,8 +13,8 @@
 //globals
 rapidjson::Document Edges;
 rapidjson::Document Nodes;
-List<int> BeginPoints;
-List<int> EndPoints;
+List<int>* BeginPoints;
+List<int>* EndPoints;
 
 //functions
 
@@ -27,6 +27,6 @@ void WalkNext(int parent, int child, List<std::string> visitededges, List<int> v
 //starts the SPCL algorithm
 void SPLC();
 //creates an integer list from json
-List<int> makeList(rapidjson::Document* d);
+List<int>* makeList(rapidjson::Document* d);
 
 #endif
