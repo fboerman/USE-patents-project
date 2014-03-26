@@ -1,5 +1,6 @@
 __author__ = 'williewonka'
 
+from time import strftime
 from json import dumps
 
 class Graph():
@@ -29,12 +30,12 @@ class Graph():
             return
         self.stream.write('\t' + parent + ' -> ' + child +  ' [label = ' + label + ', color = ' + color + '];\n')
 
-    def Parse(self,categories=[5,10,20,50],filter=-1):
+    def Parse(self,categories=[5,10,20,50],filter=-1,factor=1):
         self.StartFile()
         for node in list(self.Edges.keys()):
             parent = node.split('.')[0]
             child = node.split('.')[1]
-            count = self.Edges[node]
+            count = round((self.Edges[node])/factor)
             if count <= filter:
                 continue
             if count < categories[0]:
@@ -106,11 +107,11 @@ class Graph():
 
     def WalkNext(self, parent, child, visitededges, visitednodes):
         #DEBUG
-        if self.iterations > 10000:
-            self.DebugDump('infinite loop SPLC',[visitednodes,visitededges])
+        # if self.iterations > 1000000:
+        #     self.DebugDump('infinite loop SPLC',[visitednodes,visitededges])
         self.iterations += 1
         # print(parent + '.' + child)
-        self.debug.write(parent + '.' + child + "\n")
+        # self.debug.write(parent + '.' + child + "\n")
 
         #FUNCTION
         visitededges.append(parent + '.' + child)
@@ -128,22 +129,50 @@ class Graph():
         visitededges.pop()
         visitednodes.pop()
 
-    def SPLC(self):
-        self.debug = open('debug.txt','w')
+    def SPLC(self, dump=False):
+        # self.debug = open('debug.txt','w')
         self.CreateEdgeList('SPLC')
-        self.iterations = 0
         for beginpoint in self.FindBeginPoints():
             for child in list(self.nodes[str(beginpoint)].keys()):
+                print('Finished ' + str(beginpoint) + '.' + str(child) + ' in ' + str(self.iterations) + ' iterations at ' + strftime("%H:%M:%S"))
+                self.iterations = 0
                 self.WalkNext(str(beginpoint), str(child),[],[beginpoint])
-        self.debug.close()
+        # self.debug.close()
+        # self.DebugDump('done',[])
+        if dump:
+            stream = open("json/outputedges.json", "w")
+            stream.writelines(dumps(self.Edges))
+            stream.close()
 
-    def DebugDump(self,error,dumplist):
-        self.debug.close()
-        stream = open('debug.json','w')
-        stream.writelines(dumps(self.Edges)+'\n'+dumps(self.nodes)+'\n')
-        for dump in dumplist:
-            stream.writelines(dumps(dump)+'\n')
+    def Dump(self):
+        stream = open('json/edges.json', 'w')
+        stream.writelines(dumps(self.Edges))
         stream.close()
-        self.debug.close()
-        self.Parse()
-        raise Exception(error)
+        fixed_nodes = {}
+        for node in list(self.nodes.keys()):
+            for child in list(self.nodes[node]):
+                try:
+                    fixed_nodes[node].append(int(child))
+                except:
+                    fixed_nodes[node] = []
+                    fixed_nodes[node].append(int(child))
+        stream = open('json/nodes.json', 'w')
+        stream.writelines(dumps(fixed_nodes))
+        stream.close()
+        stream = open('json/beginpoints.json', 'w')
+        stream.writelines(dumps(self.FindBeginPoints()))
+        stream.close()
+        stream = open('json/endpoints.json', 'w')
+        stream.write(dumps(self.FindEndPoints()))
+        stream.close()
+
+#    def DebugDump(self,error,dumplist):
+#        self.debug.close()
+#        stream = open('debug.json','w')
+#        stream.writelines(dumps(self.Edges)+'\n'+dumps(self.nodes)+'\n')
+#        for dump in dumplist:
+#            stream.writelines(dumps(dump)+'\n')
+#       stream.close()
+#        self.debug.close()
+#        self.Parse()
+#        raise Exception(error)

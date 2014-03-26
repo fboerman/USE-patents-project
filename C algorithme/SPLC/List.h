@@ -101,7 +101,7 @@ template<typename T> void List<T>::pop()
 		_List[i] = old_list[i];
 	}
 	//delete the old list
-	delete old_list;
+	delete[] old_list;
 }
 
 template<typename T> std::string List<T>::Get_String(int i)

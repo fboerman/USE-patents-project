@@ -23,7 +23,7 @@ int main(int argc, char* argv[]);
 //reads the json from file and stores it in given object
 void ReadJson(rapidjson::Document* document, std::string fname);
 //walk to next point
-void WalkNext(int parent, int child, List<std::string> visitededges, List<int> visitednodes, int* iterations);
+void WalkNext(int parent, int child, List<std::string>* visitededges, List<int>* visitednodes, int* iterations);
 //starts the SPCL algorithm
 void SPLC();
 //creates an integer list from json

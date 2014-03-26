@@ -48,19 +48,22 @@ List<int>* makeList(Document* d) //copy an json array object to a integer list
 	return lijstje;
 }
 
-void WalkNext(int parent, int child, List<std::string> visitededges, List<int> visitednodes, int* iterations) //recursive routine that visits all nodes
+void WalkNext(int parent, int child, List<std::string>* visitededges, List<int>* visitednodes, int* iterations) //recursive routine that visits all nodes
 {
 	(*iterations)++; //update counter
 	std::stringstream edge;
 	edge << parent << "." << child; //create edgename
-	visitededges.append(edge.str()); //update visited node and edge
-	visitednodes.append(child);
+	visitededges->append(edge.str()); //update visited node and edge
+	visitednodes->append(child);
 	if (EndPoints->Search(child)) //check if endpoint is reached
 	{
-		for (int i = 0; i < visitededges.len(); i++) //if so, loop over all visited edges
+		for (int i = 0; i < visitededges->len(); i++) //if so, loop over all visited edges
 		{
-			Edges[visitededges.Get_String(i).c_str()].SetInt(Edges[visitededges.Get_String(i).c_str()].GetInt() + 1); //and count +1 to the value of that edge
+			Edges[visitededges->Get_String(i).c_str()].SetInt(Edges[visitededges->Get_String(i).c_str()].GetInt() + 1); //and count +1 to the value of that edge
 		}
+		//delete this point and edge from the visited list, because path has ended
+		visitededges->pop();
+		visitednodes->pop();
 		return; //endpoint reached so go one up
 	}
 	else//if not
@@ -72,17 +75,20 @@ void WalkNext(int parent, int child, List<std::string> visitededges, List<int> v
 			edge.str(" ");
 			edge.clear();
 			edge << child << "." << c; //create edgename (after clearing stringstream buffer)
-			if (visitededges.Search(edge.str()) || visitednodes.Search(c)) 
+			if (visitededges->Search(edge.str()) || visitednodes->Search(c))
 			{
 				//if this node or edge is already visited in the past, skip it (loop detection, otherwise we get stuck in an infinite loop)
 				continue;
 			}
 			else
 			{
-				WalkNext(child, c, *visitededges.clone(), *visitednodes.clone(),iterations); //if not that visit the selected node
+				WalkNext(child, c, visitededges, visitednodes,iterations); //if not that visit the selected node
 			}
 		}
 	}
+	//delete this point and edge from the visited list, because this is deadend path (if execution reaches this
+	visitededges->pop();
+	visitednodes->pop();
 }
 
 void SPLC() //the main SPLC algorithm
@@ -96,14 +102,20 @@ void SPLC() //the main SPLC algorithm
 		{
 			int iterations = 0; //counter for iterations for this child of beginpoint
 			int child = BP_nodes[j].GetInt(); //fetches the selected child
-			std::cout << "Begin with edge " << BP << "." << child << " at " << GetTime() <<std::endl; //notification with time and subject
+			//std::cout << "Begin with edge " << BP << "." << child << " at " << GetTime() <<std::endl; //notification with time and subject
+			std::cout << BP << "." << child << "\t\t\t" << GetTime() << std::endl;
 			List<std::string>* visitededges = new List<std::string>(); //create an empty list of strings for the edges
-			List<int>* visitednodes = new List<int>(); //create an empty list of integers for the nodes
-			WalkNext(BP, child, *visitededges, *visitednodes, &iterations); //start the recursive routine that walks over the points
-			std::cout << "Finished in " << iterations << " iterations at" << GetTime() << std::endl;//notification with time, subject and number of iterations
+			List<int>* visitednodes = new List<int>(BP); //create an empty list of integers for the nodes, with the beginpoint set as already visited
+			WalkNext(BP, child, visitededges, visitednodes, &iterations); //start the recursive routine that walks over the points
+			//free the memory
+			delete visitededges;
+			delete visitednodes;
+			//std::cout << "Finished in " << iterations << " iterations at " << GetTime() << std::endl;//notification with time, subject and number of iterations
+			std::cout << BP << "." << child << "\t" << iterations << "\t\t" << GetTime() << std::endl;
 			iterationstotal += iterations;
 		}
 	}
+	std::cout << "Done running at " << GetTime() << " after " << iterationstotal << " iterations" << std::endl;
 }
 
 std::string GetTime()
