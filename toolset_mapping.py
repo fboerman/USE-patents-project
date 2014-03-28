@@ -1,19 +1,24 @@
 __author__ = 'williewonka'
 
 class ToolBox:
-    sentenceweight = 5
+    # sentenceweight = 5
     searchwidth = 5
     def __init__(self, encoding):
         #constructor, reads and stores the encoding of the toolset in a list of dictionaries
         #every item in list represents a sentence
         #the sentence itself is a dictionary with words as keys and weight as values
         self.sentences = []
-        for line in encoding.split("%"):#split on the sentences
-            sentence = {}
+        for entry in encoding.split("%"):#split on the sentences
+            if entry == "" or entry == " ":
+                continue
+            sentence = {
+                "weight" : entry.split("$")[1]
+            }
+            line = entry.split("$")[0]
             for word in line.split(" "):
                 if word == "":#skip empty entries cause by double spacing
                     continue
-                sentence[word.split('|')[0]] = int(word.split('|')[1]) #save the word and weight
+                sentence[word.split('|')[0]] = float(word.split('|')[1]) #save the word and weight
             if sentence:
                 self.sentences.append(sentence) #save the sentence
 
@@ -51,19 +56,19 @@ class ToolBox:
                             #apply sentence weight
                             if result > temp_weight:
                                 temp_weight = result
-                            temp_weight *= self.sentenceweight
+                            temp_weight *= sentence["weight"]
                             break
                         z += 1
                 #ready with sentence checking, apply the weight
                 weight += temp_weight
             i += 1
-        return weight
+        return round(weight,1)
 
 
     def CheckSentence(self, word, sentence): #checks the sentence, returns weight
         if word == "":
             return 0
         for keyword in list(sentence.keys()):
-            if keyword.lower() in word.lower():
+            if keyword.lower() in word.lower() and keyword.lower() is not "weight":
                 return sentence[keyword]
         return 0

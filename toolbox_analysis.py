@@ -21,10 +21,10 @@ stream = open("toolboxes.tb","r")
 i = 0
 for line in stream:
     line = line.strip("\n")
-    try:
-        toolboxes.append(ToolBox(line))
-    except:
-        sys.exit("Parse error at line " + str(i))
+    # try:
+    toolboxes.append(ToolBox(line))
+    # except:
+    #     sys.exit("Parse error at line " + str(i))
     i += 1
 
 
